@@ -1,2 +1,11 @@
+# 构建输出目录
 build/
+
+# 用户配置文件
 *.user
+
+# Qt Creator 配置文件目录
+.qtcreator/
+
+# Visual Studio 配置文件目录
+.vs/

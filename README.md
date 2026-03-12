@@ -89,6 +89,83 @@
 |   amount    |  支出金额  | DECIMAL(10, 2) | 总位数10，小数点后2位，支持负数，非空 |
 | description |    描述    |  VARCHAR(50)   |                 可选                  |
 
+## 📂 项目结构
+
+```
+ExpenseDash                      # 项目根目录
+├─ forms                         # Qt设计师界面文件（.ui）存放目录
+│  ├─ chartwindow.ui             # 图表展示窗口界面设计
+│  ├─ logindialog.ui             # 用户登录对话框界面设计
+│  ├─ mainwindow.ui              # 应用程序主窗口界面设计
+│  └─ searchdialog.ui            # 支出记录查询对话框界面设计
+│
+├─ headers                       # 头文件（.h）存放目录
+│  ├─ chartwindow.h              # 图表窗口类定义，负责统计图表的生成与显示
+│  ├─ databasemanager.h          # 数据库管理类定义，封装SQLite数据库操作
+│  ├─ logindialog.h              # 登录对话框类定义，处理用户认证逻辑
+│  ├─ mainwindow.h               # 主窗口类定义，核心业务逻辑与界面交互
+│  ├─ searchdialog.h             # 搜索对话框类定义，实现多条件查询功能
+│  ├─ user.h                     # 用户实体类定义，对应数据库User表
+│  └─ userdao.h                  # 用户数据访问对象类定义，封装用户表操作
+│
+├─ images                        # 项目文档图片资源
+│  ├─ AI分析.png                  # AI分析报告界面截图
+│  ├─ E-R图.png                  # 数据库E-R关系图
+│  ├─ 主界面.png                  # 应用程序主界面截图
+│  ├─ 查询.png                    # 查询对话框界面截图
+│  ├─ 查询结果.png                 # 查询结果显示界面截图
+│  ├─ 柱状图.png                  # 支出统计柱状图截图
+│  ├─ 注册.png                    # 用户注册界面截图
+│  ├─ 登录.png                    # 用户登录界面截图
+│  ├─ 系统功能模块图.png            # 系统功能模块架构图
+│  └─ 饼图.png                    # 支出占比饼图截图
+│
+├─ resources                     # 应用程序资源文件目录
+│  ├─ icons                      # 图标资源子目录
+│  │  ├─ account.png             # 账户/用户图标
+│  │  ├─ add_circle.png          # 新增记录图标（圆形加号）
+│  │  ├─ add_row_below.png       # 在下方插入行图标
+│  │  ├─ bar_chart.png           # 柱状图图标
+│  │  ├─ cancel.png              # 取消操作图标
+│  │  ├─ category_search.png     # 按类别搜索图标
+│  │  ├─ check_circle.png        # 确认/完成图标（圆形对号）
+│  │  ├─ currency_yuan.png       # 人民币/金额图标
+│  │  ├─ database.png            # 数据库图标
+│  │  ├─ database_upload.png     # 数据库上传/提交图标
+│  │  ├─ data_table.png          # 数据表格图标
+│  │  ├─ date_range.png          # 日期范围选择图标
+│  │  ├─ delete.png              # 删除操作图标
+│  │  ├─ error.png               # 错误提示图标
+│  │  ├─ finance.png             # 财务管理图标
+│  │  ├─ id_card.png             # 身份证/用户ID图标
+│  │  ├─ info.png                # 信息提示图标
+│  │  ├─ login.png               # 登录图标
+│  │  ├─ mindfulness.png         # 智能分析/思考图标
+│  │  ├─ password.png            # 密码图标
+│  │  ├─ person_add.png          # 添加用户/注册图标
+│  │  ├─ pie_chart.png           # 饼图图标
+│  │  ├─ search.png              # 搜索图标
+│  │  ├─ synale_expense_sel.ico  # 应用程序图标文件
+│  │  ├─ upload.png              # 上传图标
+│  │  └─ warning.png             # 警告提示图标
+│  ├─ style                      # 样式表文件目录
+│  │  └─ style.qss               # Qt样式表，定义应用程序外观
+│  └─ res.qrc                    # Qt资源文件，注册所有资源文件
+│
+├─ sources                       # 源文件（.cpp）存放目录
+│  ├─ chartwindow.cpp            # 图表窗口类实现，包含图表生成逻辑
+│  ├─ databasemanager.cpp        # 数据库管理类实现，包含SQL语句执行
+│  ├─ logindialog.cpp            # 登录对话框类实现，包含用户认证逻辑
+│  ├─ main.cpp                   # 程序入口点，初始化应用程序
+│  ├─ mainwindow.cpp             # 主窗口类实现，核心功能实现
+│  ├─ searchdialog.cpp           # 搜索对话框类实现，查询逻辑处理
+│  ├─ user.cpp                   # 用户实体类实现，数据封装方法
+│  └─ userdao.cpp                # 用户数据访问类实现，CRUD操作实现
+│
+├─ ExpenseDash.pro               # Qt项目配置文件，包含源代码和库依赖
+├─ LICENSE                       # 开源许可证文件（MIT License）
+└─ README.md                     # 项目说明文档，包含功能介绍和使用指南
+```
 
 ## 📝 使用示例
 #### 示例一：用户注册
