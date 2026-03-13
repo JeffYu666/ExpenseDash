@@ -76,7 +76,7 @@ void MainWindow::prepareTable() {
         model = nullptr;
     }
 
-    model = new QSqlRelationalTableModel(this, DatabaseManager::instance().database());
+    model = new QSqlRelationalTableModel(this, DatabaseManager::getInstance().getDatabase());
     model->setTable("Expense");
 
     // 设置分类关系（主要关系）

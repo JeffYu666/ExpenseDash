@@ -2,53 +2,79 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QSqlError>
 
-DatabaseManager& DatabaseManager::instance() {
+DatabaseManager& DatabaseManager::getInstance()
+{
     static DatabaseManager instance;
     return instance;
 }
 
-void DatabaseManager::initialize(const QString& dbPath) {
+void DatabaseManager::initializeDatabase(const QString& relativeDirName)
+{
     if (m_initialized)
         return;
 
-    QString actualDbPath = dbPath;
-    if (actualDbPath.isEmpty()) {
-        QString appDir = QApplication::applicationDirPath();
-        QString dataDir = appDir + "/data";
+    QString appDirPath = QApplication::applicationDirPath();
+    // appDir/data
+    QString absoluteDirPath = appDirPath + QDir::separator() + relativeDirName;
 
-        QDir dir(dataDir);
-        if (!dir.exists()) {
-            if (!dir.mkpath(".")) {
-                qWarning() << "无法创建数据目录:" << dataDir;
-                return;
-            }
-        }
-        actualDbPath = dataDir + "/database.db";
+    QDir dir(appDirPath);
+    if (!dir.mkpath(relativeDirName))
+    {
+        QString errorStr = QString("创建数据目录失败！\n路径: %1\n错误: %2")
+                               .arg(absoluteDirPath)
+                               .arg(strerror(errno));
+
+        qFatal("%s", qPrintable(errorStr));
     }
+
+    // appDir/data/database.db
+    QString absoluteDbPath = absoluteDirPath + QDir::separator() + "database.db";
 
     m_db = QSqlDatabase::addDatabase("QSQLITE");
-    m_db.setDatabaseName(actualDbPath);
+    m_db.setDatabaseName(absoluteDbPath);
 
     m_initialized = m_db.open();
-    if (m_initialized) {
-        qDebug() << "数据库初始化成功。";
-    } else {
-        qWarning() << "数据库初始化失败！";
+    if (m_initialized)
+    {
+        qInfo().noquote() << QString("数据库初始化成功\n"
+                                     "    路径: %1\n"
+                                     "    驱动: %2")
+                              .arg(absoluteDbPath)
+                              .arg(m_db.driverName());
+    }
+    else
+    {
+        QSqlError error = m_db.lastError();
+        QString errorMsg = QString("数据库初始化失败！\n"
+                                   "    路径: %1\n"
+                                   "    错误: %2\n"
+                                   "    类型: %3\n"
+                                   "    驱动错误: %4")
+                               .arg(absoluteDbPath)
+                               .arg(error.text())
+                               .arg(error.type())
+                               .arg(error.driverText());
+
+        qFatal("%s", qPrintable(errorMsg));
     }
 }
 
-QSqlDatabase& DatabaseManager::database() {
-    return m_db;
-}
-
-bool DatabaseManager::isInitialized() const {
+bool DatabaseManager::isInitialized()
+{
     return m_initialized;
 }
 
-DatabaseManager::~DatabaseManager() {
-    if (m_db.isOpen()) {
+QSqlDatabase& DatabaseManager::getDatabase()
+{
+    if (!m_initialized)
+        qFatal("尝试获取未初始化的数据库连接！");
+    return m_db;
+}
+
+DatabaseManager::~DatabaseManager()
+{
+    if (m_db.isOpen())
         m_db.close();
-    }
-    QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
 }

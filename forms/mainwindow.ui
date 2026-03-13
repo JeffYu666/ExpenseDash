@@ -14,7 +14,7 @@
    <string>个人支出分析系统</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="res.qrc">
+   <iconset resource="../resources/res.qrc">
     <normaloff>:/icons/icons/synale_expense_sel.ico</normaloff>:/icons/icons/synale_expense_sel.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -57,7 +57,7 @@
   </widget>
  </widget>
  <resources>
-  <include location="res.qrc"/>
+  <include location="../resources/res.qrc"/>
  </resources>
  <connections/>
 </ui>

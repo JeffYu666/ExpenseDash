@@ -5,13 +5,13 @@
 
 class User {
 public:
-    User(const int& id, const QString& name, const QString& password);
-    int getId() const;
+    User(const qint32& id, const QString& name, const QString& password);
+    qint32 getId() const;
     QString getName() const;
     QString getPassword() const;
 
 private:
-    int m_id;
+    qint32 m_id;
     QString m_name;
     QString m_password;
 };

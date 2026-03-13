@@ -1,29 +1,25 @@
 #include "logindialog.h"
 #include <QFile>
-#include "databasemanager.h"
 #include "ui_logindialog.h"
 #include "userdao.h"
 
 LoginDialog::LoginDialog(QWidget *parent)
     : QDialog(parent)
-    , ui(new Ui::LoginDialog) {
+    , ui(new Ui::LoginDialog)
+{
     ui->setupUi(this);
-
-    DatabaseManager::instance().initialize(); // 初始化数据库
-    UserDao::enableForeignKeys();             // 启用外键约束
-    UserDao::createAllTables();               // 创建所有表
-    UserDao::createIndexes();                 // 创建所有索引
-    UserDao::insertTestData();                // 插入测试数据
 
     connect(ui->registerBtn, &QPushButton::clicked, this, &LoginDialog::registerUser);
     connect(ui->loginBtn, &QPushButton::clicked, this, &LoginDialog::LoginUser);
 }
 
-LoginDialog::~LoginDialog() {
+LoginDialog::~LoginDialog()
+{
     delete ui;
 }
 
-void LoginDialog::registerUser() {
+void LoginDialog::registerUser()
+{
     const QString username = ui->usernameLineEdit->text();
     const QString password = ui->passwordLineEdit->text();
     if (username.isEmpty()) {
@@ -48,7 +44,8 @@ void LoginDialog::registerUser() {
     }
 }
 
-void LoginDialog::LoginUser() {
+void LoginDialog::LoginUser()
+{
     const QString username = ui->usernameLineEdit->text();
     const QString password = ui->passwordLineEdit->text();
     if (username.isEmpty()) {

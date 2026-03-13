@@ -14,7 +14,7 @@
    <string>图表和AI分析</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="res.qrc">
+   <iconset resource="../resources/res.qrc">
     <normaloff>:/icons/icons/finance.png</normaloff>:/icons/icons/finance.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -72,7 +72,7 @@
           <string>AI分析</string>
          </property>
          <property name="icon">
-          <iconset resource="res.qrc">
+          <iconset resource="../resources/res.qrc">
            <normaloff>:/icons/icons/mindfulness.png</normaloff>:/icons/icons/mindfulness.png</iconset>
          </property>
         </widget>
@@ -99,7 +99,7 @@
         </sizepolicy>
        </property>
        <attribute name="icon">
-        <iconset resource="res.qrc">
+        <iconset resource="../resources/res.qrc">
          <normaloff>:/icons/icons/bar_chart.png</normaloff>:/icons/icons/bar_chart.png</iconset>
        </attribute>
        <attribute name="title">
@@ -115,7 +115,7 @@
         </sizepolicy>
        </property>
        <attribute name="icon">
-        <iconset resource="res.qrc">
+        <iconset resource="../resources/res.qrc">
          <normaloff>:/icons/icons/pie_chart.png</normaloff>:/icons/icons/pie_chart.png</iconset>
        </attribute>
        <attribute name="title">
@@ -140,7 +140,7 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
-  <include location="res.qrc"/>
+  <include location="../resources/res.qrc"/>
  </resources>
  <connections/>
 </ui>
