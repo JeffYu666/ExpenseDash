@@ -75,6 +75,23 @@ public:
     ///            * (user_id, category_id, date)复合索引
     static void createIndexes();
 
+    /// @brief 检查指定表是否为空
+    /// @details 执行 SELECT COUNT(*) 查询来判断表中是否有数据。如果查询执行失败或表不存在，
+    ///          函数会返回 false 并记录警告信息。此函数主要用于在初始化数据库时判断
+    ///          是否需要插入测试数据。
+    ///
+    /// @param query  已连接的 QSqlQuery 对象，用于执行查询操作
+    /// @param tableName 要检查的表名
+    /// @return
+    ///         - true  - 表存在且没有任何数据（记录数为0）
+    ///         - false - 表不存在、查询失败或表中已有数据（记录数>0）
+    ///
+    /// @warning 函数不会检查表名是否合法，调用者需确保表名不包含 SQL 注入风险
+    /// @note 如果查询执行失败，函数会自动记录警告信息，包括表名和错误详情
+    ///
+    /// @see insertTestData
+    static bool isTableEmpty(QSqlQuery& query, const QString& tableName);
+
     /// @brief 插入测试数据
     /// @details 向所有表中插入预设的测试数据，包括：
     ///          - 一个测试用户（admin/123456）

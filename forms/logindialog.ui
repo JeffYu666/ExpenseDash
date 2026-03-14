@@ -14,7 +14,7 @@
    <string>用户登录界面</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="res.qrc">
+   <iconset resource="../resources/res.qrc">
     <normaloff>:/icons/icons/account.png</normaloff>:/icons/icons/account.png</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -118,7 +118,7 @@
          <string>Register</string>
         </property>
         <property name="icon">
-         <iconset resource="res.qrc">
+         <iconset resource="../resources/res.qrc">
           <normaloff>:/icons/icons/person_add.png</normaloff>:/icons/icons/person_add.png</iconset>
         </property>
        </widget>
@@ -148,7 +148,7 @@
          <string>Login</string>
         </property>
         <property name="icon">
-         <iconset resource="res.qrc">
+         <iconset resource="../resources/res.qrc">
           <normaloff>:/icons/icons/login.png</normaloff>:/icons/icons/login.png</iconset>
         </property>
        </widget>
@@ -178,7 +178,7 @@
          <string>Cancel</string>
         </property>
         <property name="icon">
-         <iconset resource="res.qrc">
+         <iconset resource="../resources/res.qrc">
           <normaloff>:/icons/icons/cancel.png</normaloff>:/icons/icons/cancel.png</iconset>
         </property>
        </widget>
@@ -189,7 +189,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="res.qrc"/>
+  <include location="../resources/res.qrc"/>
  </resources>
  <connections>
   <connection>

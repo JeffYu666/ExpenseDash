@@ -142,6 +142,23 @@ void UserDao::createIndexes()
 }
 
 // 插入测试数据--------------------------------------------------------------------------
+bool UserDao::isTableEmpty(QSqlQuery& query, const QString& tableName)
+{
+    QString sql = QString("SELECT COUNT(*) FROM %1").arg(tableName);
+    if (!query.exec(sql))
+    {
+        qWarning().noquote() << "检查表" << tableName << "是否存在数据失败！" << Qt::endl
+                             << "    取消对表" << tableName << "的测试数据插入！" << Qt::endl
+                             << "    " << query.lastError().text();
+        return false;
+    }
+
+    if (query.next())
+        return query.value(0).toInt() == 0;
+
+    return false;
+}
+
 void UserDao::insertTestData()
 {
     QSqlDatabase& db = getDatabase();
@@ -150,13 +167,12 @@ void UserDao::insertTestData()
     // 开始事务
     if (!db.transaction())
     {
-        qWarning().noquote() << "事务开始失败！" << db.lastError().text();
+        qWarning().noquote() << "插入测试数据的事务开始失败！" << db.lastError().text();
         return;
     }
 
     // 检查User表中是否已有数据，避免重复插入
-    query.exec("SELECT COUNT(*) FROM User");
-    if (query.next() && query.value(0).toInt() == 0)
+    if (UserDao::isTableEmpty(query, "User"))
     {
         // 插入用户数据
         QStringList userQueries = {
@@ -167,7 +183,7 @@ void UserDao::insertTestData()
         {
             if (!query.exec(sql))
             {
-                qWarning().noquote() << "用户数据插入失败！" << query.lastError().text();
+                qWarning().noquote() << "测试用户数据插入失败！" << query.lastError().text();
                 db.rollback();
                 return;
             }
@@ -175,8 +191,7 @@ void UserDao::insertTestData()
     }
 
     // 检查Category表中是否已有数据，避免重复插入
-    query.exec("SELECT COUNT(*) FROM Category");
-    if (query.next() && query.value(0).toInt() == 0)
+    if (UserDao::isTableEmpty(query, "Category"))
     {
         // 准备预处理语句
         QString insertSql = "INSERT INTO Category (category_name) VALUES (:category_name)";
@@ -193,7 +208,7 @@ void UserDao::insertTestData()
 
             if (!query.exec())
             {
-                qWarning().noquote() << "类别数据插入失败！" << query.lastError().text();
+                qWarning().noquote() << "测试类别数据插入失败！" << query.lastError().text();
                 db.rollback();
                 return;
             }
@@ -201,8 +216,7 @@ void UserDao::insertTestData()
     }
 
     // 检查Expense表中是否已有数据，避免重复插入
-    query.exec("SELECT COUNT(*) FROM Expense");
-    if (query.next() && query.value(0).toInt() == 0)
+    if (UserDao::isTableEmpty(query, "Expense"))
     {
         // 插入支出记录
         QString insertSql = "INSERT INTO Expense (user_id, category_id, date, amount, description) "
@@ -254,7 +268,7 @@ void UserDao::insertTestData()
 
             if (!query.exec())
             {
-                qWarning().noquote() << "支出记录插入失败！" << query.lastError().text();
+                qWarning().noquote() << "测试支出记录插入失败！" << query.lastError().text();
                 db.rollback();
                 return;
             }
@@ -264,12 +278,12 @@ void UserDao::insertTestData()
     // 提交事务
     if (!db.commit())
     {
-        qWarning().noquote() << "事务提交失败！" << db.lastError().text();
+        qWarning().noquote() << "插入测试数据的事务提交失败！" << db.lastError().text();
         db.rollback();
         return;
     }
 
-    qDebug() << "测试数据已就绪。";
+    qDebug() << "测试数据全部插入成功。";
 }
 
 // 输入数据检查--------------------------------------------------------------------------
@@ -283,8 +297,8 @@ bool UserDao::usernameExists(const QString &username)
 
     if (!query.exec())
     {
-        qWarning().noquote() << "查询用户名是否存在失败:" << query.lastError().text();
-        return false;
+        qWarning().noquote() << "查询用户名是否存在失败！" << query.lastError().text();
+        return true;// 查询用户名是否存在失败，默认已存在
     }
 
     if (query.next())
@@ -306,14 +320,12 @@ bool UserDao::passwordCorrect(const QString &username, const QString &password)
 
     if (!query.exec())
     {
-        qWarning().noquote() << "查询密码是否匹配失败:" << query.lastError().text();
+        qWarning().noquote() << "查询密码是否匹配失败！" << query.lastError().text();
         return false;
     }
 
     if (query.next())
-    {
         return query.value(0).toInt() > 0;
-    }
 
     return false;
 }
@@ -348,9 +360,7 @@ qint32 UserDao::getIdByName(const QString &name)
         return -1;
     }
     if (query.next())
-    {
         return query.value(0).value<qint32>(); // 返回找到的user_id
-    }
     else
     {
         qWarning().noquote() << "通过用户名查询id时，未找到用户:" << name;
