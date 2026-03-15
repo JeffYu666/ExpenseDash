@@ -42,7 +42,8 @@ public:
     /// @details 创建 User 表，包含字段：
     ///          - user_id: 用户ID，主键，自增
     ///          - user_name: 用户名，唯一，非空
-    ///          - user_pwd: 用户密码，非空
+    ///          - user_hash: 密码哈希值，存储SHA256哈希结果
+    ///          - user_salt: 密码盐值
     static void createTableUser();
 
     /// @brief 创建分类表
@@ -75,23 +76,6 @@ public:
     ///            * (user_id, category_id, date)复合索引
     static void createIndexes();
 
-    /// @brief 检查指定表是否为空
-    /// @details 执行 SELECT COUNT(*) 查询来判断表中是否有数据。如果查询执行失败或表不存在，
-    ///          函数会返回 false 并记录警告信息。此函数主要用于在初始化数据库时判断
-    ///          是否需要插入测试数据。
-    ///
-    /// @param query  已连接的 QSqlQuery 对象，用于执行查询操作
-    /// @param tableName 要检查的表名
-    /// @return
-    ///         - true  - 表存在且没有任何数据（记录数为0）
-    ///         - false - 表不存在、查询失败或表中已有数据（记录数>0）
-    ///
-    /// @warning 函数不会检查表名是否合法，调用者需确保表名不包含 SQL 注入风险
-    /// @note 如果查询执行失败，函数会自动记录警告信息，包括表名和错误详情
-    ///
-    /// @see insertTestData
-    static bool isTableEmpty(QSqlQuery& query, const QString& tableName);
-
     /// @brief 插入测试数据
     /// @details 向所有表中插入预设的测试数据，包括：
     ///          - 一个测试用户（admin/123456）
@@ -108,16 +92,27 @@ public:
     static bool usernameExists(const QString& username);
 
     /// @brief 验证用户名密码是否匹配
-    /// @param username 用户名
-    /// @param password 密码（明文）
-    /// @return true 表示用户名和密码匹配，false 表示不匹配或查询失败
+    /// @param username 用户名，用于查找对应用户
+    /// @param password 明文密码，会被加盐哈希后与存储的哈希值比较
+    /// @return true 表示用户名和密码匹配；false 表示不匹配、用户不存在或查询失败
+    /// @details 验证过程：
+    ///          1. 根据用户名查询对应的盐值和哈希值
+    ///          2. 使用查到的盐值对输入的明文密码进行SHA256哈希
+    ///          3. 比较计算出的哈希值与数据库中存储的哈希值
+    ///
+    /// @see User::hashPassword()
     static bool passwordCorrect(const QString& username, const QString& password);
 
     // 插入数据--------------------------------------------------------------------------
     /// @brief 插入新用户
-    /// @param user User对象指针，包含用户名和密码信息
+    /// @param user User对象指针，包含用户名、密码哈希和盐值信息
     /// @return true 表示插入成功，false 表示插入失败
-    /// @warning 此方法目前有bug，密码绑定使用了用户名，需要修复
+    /// @details 插入用户信息到数据库，包括：
+    ///          - 用户名（来自 user->getName()）
+    ///          - 密码哈希（来自 user->getHash()）
+    ///          - 密码盐值（来自 user->getSalt()）
+    /// @warning 传入的user指针不能为nullptr，否则会导致未定义行为
+    /// @see User::getName(), User::getHash(), User::getSalt()
     static bool insertUser(const User* user);
 
     // 获取ID--------------------------------------------------------------------------

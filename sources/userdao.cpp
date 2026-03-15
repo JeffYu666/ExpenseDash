@@ -34,7 +34,8 @@ void UserDao::createTableUser()
         CREATE TABLE IF NOT EXISTS User (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_name VARCHAR(20) NOT NULL UNIQUE,
-            user_pwd VARCHAR(255) NOT NULL
+            user_hash VARCHAR(64) NOT NULL,
+            user_salt VARCHAR(256) NOT NULL
         )
     )"))
     {
@@ -142,22 +143,40 @@ void UserDao::createIndexes()
 }
 
 // 插入测试数据--------------------------------------------------------------------------
-bool UserDao::isTableEmpty(QSqlQuery& query, const QString& tableName)
+namespace
 {
-    QString sql = QString("SELECT COUNT(*) FROM %1").arg(tableName);
-    if (!query.exec(sql))
+    /// @brief 检查指定表是否为空
+    /// @details 执行 SELECT COUNT(*) 查询来判断表中是否有数据。如果查询执行失败或表不存在，
+    ///          函数会返回 false 并记录警告信息。此函数主要用于在初始化数据库时判断
+    ///          是否需要插入测试数据。
+    ///
+    /// @param query  已连接的 QSqlQuery 对象，用于执行查询操作
+    /// @param tableName 要检查的表名
+    /// @return
+    ///         - true  - 表存在且没有任何数据（记录数为0）
+    ///         - false - 表不存在、查询失败或表中已有数据（记录数>0）
+    ///
+    /// @warning 函数不会检查表名是否合法，调用者需确保表名不包含 SQL 注入风险
+    /// @note 如果查询执行失败，函数会自动记录警告信息，包括表名和错误详情
+    ///
+    /// @see insertTestData
+    bool isTableEmpty(QSqlQuery& query, const QString& tableName)
     {
-        qWarning().noquote() << "检查表" << tableName << "是否存在数据失败！" << Qt::endl
-                             << "    取消对表" << tableName << "的测试数据插入！" << Qt::endl
-                             << "    " << query.lastError().text();
+        QString sql = QString("SELECT COUNT(*) FROM %1").arg(tableName);
+        if (!query.exec(sql))
+        {
+            qWarning().noquote() << "检查表" << tableName << "是否存在数据失败！" << Qt::endl
+                                 << "    取消对表" << tableName << "的测试数据插入！" << Qt::endl
+                                 << "    " << query.lastError().text();
+            return false;
+        }
+
+        if (query.next())
+            return query.value(0).toInt() == 0;
+
         return false;
     }
-
-    if (query.next())
-        return query.value(0).toInt() == 0;
-
-    return false;
-}
+}// namespace
 
 void UserDao::insertTestData()
 {
@@ -172,16 +191,22 @@ void UserDao::insertTestData()
     }
 
     // 检查User表中是否已有数据，避免重复插入
-    if (UserDao::isTableEmpty(query, "User"))
+    if (isTableEmpty(query, "User"))
     {
+        User testUser(1, "admin", "123456");
         // 插入用户数据
         QStringList userQueries = {
-            "INSERT INTO User (user_name, user_pwd) VALUES ('admin', '123456')"
+            R"(INSERT INTO User (user_name, user_hash, user_salt)
+               VALUES (:username, :userhash, :usersalt))",
         };
 
         for (const QString &sql : userQueries)
         {
-            if (!query.exec(sql))
+            query.prepare(sql);
+            query.bindValue(":username", testUser.getName());
+            query.bindValue(":userhash", testUser.getHash());
+            query.bindValue(":usersalt", testUser.getSalt());
+            if (!query.exec())
             {
                 qWarning().noquote() << "测试用户数据插入失败！" << query.lastError().text();
                 db.rollback();
@@ -191,7 +216,7 @@ void UserDao::insertTestData()
     }
 
     // 检查Category表中是否已有数据，避免重复插入
-    if (UserDao::isTableEmpty(query, "Category"))
+    if (isTableEmpty(query, "Category"))
     {
         // 准备预处理语句
         QString insertSql = "INSERT INTO Category (category_name) VALUES (:category_name)";
@@ -216,7 +241,7 @@ void UserDao::insertTestData()
     }
 
     // 检查Expense表中是否已有数据，避免重复插入
-    if (UserDao::isTableEmpty(query, "Expense"))
+    if (isTableEmpty(query, "Expense"))
     {
         // 插入支出记录
         QString insertSql = "INSERT INTO Expense (user_id, category_id, date, amount, description) "
@@ -314,18 +339,21 @@ bool UserDao::passwordCorrect(const QString &username, const QString &password)
     QSqlDatabase& db = getDatabase();
     QSqlQuery query(db);
 
-    query.prepare("SELECT COUNT(*) FROM User WHERE user_name = :username AND user_pwd = :password");
+    query.prepare("SELECT user_hash, user_salt FROM User WHERE user_name = :username");
     query.bindValue(":username", username);
-    query.bindValue(":password", password);
 
     if (!query.exec())
     {
-        qWarning().noquote() << "查询密码是否匹配失败！" << query.lastError().text();
+        qWarning().noquote() << "读取哈希和盐失败！" << query.lastError().text();
         return false;
     }
 
     if (query.next())
-        return query.value(0).toInt() > 0;
+    {
+        QString hash = query.value("user_hash").toString();
+        QString salt = query.value("user_salt").toString();
+        return hash == User::hashPassword(password, salt);
+    }
 
     return false;
 }
@@ -335,9 +363,10 @@ bool UserDao::insertUser(const User *user)
 {
     QSqlDatabase& db = getDatabase();
     QSqlQuery query(db);
-    query.prepare("INSERT INTO User (user_name, user_pwd) VALUES (:username, :userpassword)");
+    query.prepare("INSERT INTO User (user_name, user_hash, user_salt) VALUES (:username, :userhash, :usersalt)");
     query.bindValue(":username", user->getName());
-    query.bindValue(":userpassword", user->getName());
+    query.bindValue(":userhash", user->getHash());
+    query.bindValue(":usersalt", user->getSalt());
     if (!query.exec())
     {
         qWarning().noquote() << "注册新用户时，插入User表失败！" << db.lastError().text();

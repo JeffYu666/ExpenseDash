@@ -70,7 +70,7 @@ namespace
     /// @see validateUsername()
     /// @see validatePassword()
     bool validateUsernameAndPassword(const QString& username, const QString& password,
-                                            QDialog* dialog, const QString& scene)
+                                     QDialog* dialog, const QString& scene)
     {
         if (!validateUsername(username))
         {

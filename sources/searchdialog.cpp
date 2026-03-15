@@ -6,7 +6,6 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include "ui_searchdialog.h"
-#include "userdao.h"
 
 SearchDialog::SearchDialog(QSqlRelationalTableModel *model, const User *currentUser, QWidget *parent)
     : QDialog(parent)

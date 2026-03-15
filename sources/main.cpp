@@ -30,10 +30,8 @@ int main(int argc, char *argv[])
     MainWindow mainWindow;
 
     // 连接登录对话框的用户认证信号到主窗口的设置当前用户槽函数
-    QObject::connect(&loginDialog,
-                     &LoginDialog::userAuthenticated,
-                     &mainWindow,
-                     &MainWindow::setCurrentUser);
+    QObject::connect(&loginDialog, &LoginDialog::userAuthenticated,
+                     &mainWindow, &MainWindow::setCurrentUser);
     
     // 在登录对话框中用户认证失败，则直接退出应用程序
     if (loginDialog.exec() != QDialog::Accepted)
