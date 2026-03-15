@@ -57,7 +57,7 @@
 系统使用SQLite数据库，包含以下三张表：
 |  实体名  |  中文名  |    主码     |         外码         |         其他属性          |        描述        |
 | :------: | :------: | :---------: | :------------------: | :-----------------------: | :----------------: |
-|   User   |   用户   |   user_id   |          无          |    user_name, user_pwd    | 用户名称，用户密码 |
+|   User   |   用户   |   user_id   |          无          |    user_name, user_salt, user_hash    | 用户名称，盐值，密码哈希 |
 | Category | 支出分类 | category_id |          无          |       category_name       |      分类名称      |
 | Expense  | 支出记录 | expense_id  | user_id, category_id | date, amount, description |  日期、金额、描述  |
 
@@ -69,7 +69,8 @@
 | :-------: | :------: | :----------: | :--------: |
 |  user_id  |  用户id  |   INTEGER    | 主码，自增 |
 | user_name | 用户名称 | VARCHAR(20)  | 非空且唯一 |
-| user_pwd  | 用户密码 | VARCHAR(255) |    非空    |
+| user_salt  | 盐值 | VARCHAR(64) |    非空    |
+| user_hash  | 密码哈希 | VARCHAR(256) |    非空    |
 
 #### 表2 Category表（支出类别）
 
@@ -168,24 +169,82 @@ ExpenseDash                      # 项目根目录
 ```
 
 ## 📝 使用示例
+
 #### 示例一：用户注册
-![登录](./images/登录.png) ![注册](./images/注册.png)
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./images/登录.png" alt="登录" width="250"/>
+      <br/>
+      <em>登录界面</em>
+    </td>
+    <td align="center">
+      <img src="./images/注册.png" alt="注册" width="150"/>
+      <br/>
+      <em>注册界面</em>
+    </td>
+  </tr>
+</table>
+
 在用户登录界面点击注册后，会检查该用户名称是否已存在。若不存在，则将用户名称和密码插入用户表，user_id每次自增1确保实体完整性；若存在，则弹出窗口显示“用户名已存在”。
 
 #### 示例二：主界面使用
-![主界面](./images/主界面.png)
+
+<div align="center">
+  <img src="./images/主界面.png" alt="主界面" width="400"/>
+  <br/>
+  <em>主界面</em>
+</div>
+
 在用户登录界面点击登录后，会显示主界面。包括新增、删除、提交、查询、图标和AI分析功能。
 
 #### 示例三：支出查询
-![查询](./images/查询.png) ![查询结果](./images/查询结果.png)
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./images/查询.png" alt="查询" width="300"/>
+      <br/>
+      <em>查询条件设置</em>
+    </td>
+    <td align="center">
+      <img src="./images/查询结果.png" alt="查询结果" width="400"/>
+      <br/>
+      <em>查询结果显示</em>
+    </td>
+  </tr>
+</table>
+
 点击查询，弹出查询界面。设定日期范围、支出类型和金额范围后点击OK，将在主界面显示查询结果。
 
 #### 示例四：查看支出图表
-![柱状图](./images/柱状图.png) ![饼图](./images/饼图.png)
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./images/柱状图.png" alt="柱状图" width="400"/>
+      <br/>
+      <em>柱状图展示</em>
+    </td>
+    <td align="center">
+      <img src="./images/饼图.png" alt="饼图" width="400"/>
+      <br/>
+      <em>饼图展示</em>
+    </td>
+  </tr>
+</table>
+
 点击图标和AI分析功能，弹出图表，可选择统计的月份并在柱状图和饼图之间切换。
 
 #### 示例五：查看AI支出分析报告
-![AI分析](./images/AI分析.png)
+
+<div align="center">
+  <img src="./images/AI分析.png" alt="AI分析" width="400"/>
+  <br/>
+  <em>AI智能分析报告</em>
+</div>
+
 点击AI分析，稍作等待后会显示出AI智能分析报告。
 
 ## ✅ 优势
@@ -197,6 +256,7 @@ ExpenseDash                      # 项目根目录
 | **用户体验良好** | 界面布局清晰，操作流程直观，支持图表交互（如悬停提示）、动态Y轴范围调整等细节设计，提升了用户的使用体验。 |
 | **模块化设计** | 系统结构清晰，各功能模块相对独立，便于后续维护与扩展。数据库设计与业务逻辑分离，符合软件工程的高内聚低耦合原则。 |
 | **智能分析能力初步实现** | 具备基础的支出结构评估与消费习惯分析功能，能为用户提供初步的财务建议和风险提示，具有一定的实用价值。 |
+| **密码安全** | • 加盐哈希：采用SHA256算法+16位随机盐值存储密码哈希<br>• 安全认证：登录验证使用哈希比对，杜绝明文传输风险|
 
 ## 📌 已知问题
 
