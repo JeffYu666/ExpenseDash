@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     app.setApplicationName("个人收支分析系统");
-    app.setApplicationVersion("1.2.0");
+    app.setApplicationVersion("1.3");
 
     // 设置应用程序的样式
     setApplicationStyle(app);

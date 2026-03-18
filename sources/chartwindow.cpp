@@ -15,7 +15,7 @@
 #include <QNetworkRequest>
 #include <QTimer>
 
-ChartWindow::ChartWindow(const User *user, QWidget *parent)
+ChartWindow::ChartWindow(QWidget *parent, const User *user)
     : QMainWindow(parent)
     , currentUser(user)
     , ui(new Ui::ChartWindow) {

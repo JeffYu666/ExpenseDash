@@ -11,7 +11,7 @@ class ChartWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit ChartWindow(const User *user, QWidget *parent = nullptr);
+    explicit ChartWindow(QWidget *parent = nullptr, const User *user = nullptr);
     ~ChartWindow();
 
 private:

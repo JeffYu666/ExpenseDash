@@ -7,132 +7,151 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow) {
+    , ui(new Ui::MainWindow)
+{
     ui->setupUi(this);
-    setupToolBar();
+    displayVersion();// 显示应用程序版本信息
+    setupToolBar();  // 初始化并设置主窗口的工具栏
+}
 
+void MainWindow::displayVersion()
+{
     // 创建永久显示的版本信息
     QString version = QApplication::applicationVersion();
-    QLabel *versionLabel = new QLabel(QString("Version: v%1").arg(version), this);
+    QLabel *versionLabel = new QLabel(QString("version: v%1").arg(version), this);
     versionLabel->setFrameStyle(QFrame::NoFrame);
-    versionLabel->setIndent(5); // 添加一些缩进
 
     // 添加到状态栏的永久区域（右侧）
     ui->statusbar->addPermanentWidget(versionLabel);
 }
 
-void MainWindow::setupToolBar() {
+void MainWindow::addToolBarAction(const QString &text, const QString& iconPath,
+                                  const QKeySequence::StandardKey& shortcut,
+                                  void (MainWindow::*slot)())
+{
+    QAction *action = new QAction(text, this);
+    if (!iconPath.isEmpty())
+        action->setIcon(QIcon(iconPath));
+    action->setShortcut(shortcut);
+    connect(action, &QAction::triggered, this, slot);
+    ui->toolBar->addAction(action);
+}
+
+void MainWindow::setupToolBar()
+{
     // 创建工具栏
     ui->toolBar->setMovable(false);          // 固定工具栏位置
     ui->toolBar->setIconSize(QSize(24, 24)); // 设置图标大小
 
     // 新增功能
-    QAction *addAction = new QAction(tr("新增"), this);
-    addAction->setIcon(QIcon(":/icons/icons/add_circle.png"));
-    addAction->setShortcut(QKeySequence::New);
-    connect(addAction, &QAction::triggered, this, &MainWindow::onAddButtonClicked);
-    ui->toolBar->addAction(addAction);
-
+    addToolBarAction("新增", ":/icons/icons/add_circle.png",
+                     QKeySequence::New, &MainWindow::onAddButtonClicked);
     // 删除功能
-    QAction *deleteAction = new QAction(tr("删除"), this);
-    deleteAction->setIcon(QIcon(":/icons/icons/delete.png"));
-    deleteAction->setShortcut(QKeySequence::Delete);
-    connect(deleteAction, &QAction::triggered, this, &MainWindow::onDeleteButtonClicked);
-    ui->toolBar->addAction(deleteAction);
-
+    addToolBarAction("删除", ":/icons/icons/delete.png",
+                     QKeySequence::Delete, &MainWindow::onDeleteButtonClicked);
     // 提交功能
-    QAction *submitAction = new QAction(tr("提交"), this);
-    submitAction->setIcon(QIcon(":/icons/icons/upload.png"));
-    submitAction->setShortcut(QKeySequence::Save);
-    connect(submitAction, &QAction::triggered, this, &MainWindow::onSubmitButtonClicked);
-    ui->toolBar->addAction(submitAction);
+    addToolBarAction("提交", ":/icons/icons/upload.png",
+                     QKeySequence::Save, &MainWindow::onSubmitButtonClicked);
 
     ui->toolBar->addSeparator();
 
     // 查询功能
-    QAction *searchAction = new QAction(tr("查询"), this);
-    searchAction->setIcon(QIcon(":/icons/icons/search.png"));
-    searchAction->setShortcut(QKeySequence::Find);
-    connect(searchAction, &QAction::triggered, this, &MainWindow::onSearchButtonClicked);
-    ui->toolBar->addAction(searchAction);
+    addToolBarAction("查询", ":/icons/icons/search.png",
+                     QKeySequence::Find, &MainWindow::onSearchButtonClicked);
 
     ui->toolBar->addSeparator();
 
-    // 图表分析功能
-    QAction *chartAction = new QAction(tr("图表和AI分析"), this);
-    chartAction->setIcon(QIcon(":/icons/icons/finance.png"));
-    connect(chartAction, &QAction::triggered, this, &MainWindow::onChartButtonClicked);
-    ui->toolBar->addAction(chartAction);
+    // 图表和AI分析功能
+    addToolBarAction("图表和AI分析", ":/icons/icons/finance.png",
+                     QKeySequence::UnknownKey, &MainWindow::onChartButtonClicked);
 }
 
-void MainWindow::prepareTable() {
-    if (currentUser == nullptr) {
+void MainWindow::prepareTable()
+{
+    if (currentUser == nullptr)
+    {
         QMessageBox::critical(this, "用户信息为空", "请联系管理员！");
+        qFatal("MainWindow在prepareTable()中发现currentUser指向空！");
     }
 
-    // 清理旧的model
-    if (model) {
-        delete model;
-        model = nullptr;
-    }
-
+    // 创建关系型表格模型
     model = new QSqlRelationalTableModel(this, DatabaseManager::getInstance().getDatabase());
+    // 设置模型对应的数据库表为"Expense"
     model->setTable("Expense");
 
     // 设置分类关系（主要关系）
-    model->setRelation(model->fieldIndex("category_id"),
-                       QSqlRelation("Category", "category_id", "category_name"));
+    model->setRelation(
+        model->fieldIndex("category_id"),
+        QSqlRelation("Category", "category_id", "category_name")
+    );
 
-    // 设置用户过滤（但不在关系中显示用户名）
+    // 使用用户id进行过滤，只显示当前用户记录
     model->setFilter(QString("user_id = %1").arg(currentUser->getId()));
-    model->setSort(model->fieldIndex("date"), Qt::DescendingOrder);
-    // 设置要显示的字段
-    model->setHeaderData(model->fieldIndex("date"), Qt::Horizontal, tr("日期"));
-    model->setHeaderData(model->fieldIndex("category_id"), Qt::Horizontal, tr("分类"));
-    model->setHeaderData(model->fieldIndex("amount"), Qt::Horizontal, tr("金额"));
-    model->setHeaderData(model->fieldIndex("description"), Qt::Horizontal, tr("描述"));
-
-    model->setEditStrategy(QSqlTableModel::OnManualSubmit); // 设置为手动提交
-    // 选择数据
+    // 设置为手动提交，需调用model->submitAll()才会提交
+    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    // 执行SQL查询，从数据库加载数据
     model->select();
 
+    // 设置要显示的字段
+    model->setHeaderData(model->fieldIndex("date"),          Qt::Horizontal, tr("日期"));
+    model->setHeaderData(model->fieldIndex("category_name"), Qt::Horizontal, tr("分类"));
+    model->setHeaderData(model->fieldIndex("amount"),        Qt::Horizontal, tr("金额"));
+    model->setHeaderData(model->fieldIndex("description"),   Qt::Horizontal, tr("描述"));
+
+    // -------------------------------------------------------------------------------
+
+    // 将设置好的模型设置给tableView显示
+    ui->tableView->setModel(model);
     // 设置委托，让分类字段显示为组合框
     ui->tableView->setItemDelegate(new QSqlRelationalDelegate(ui->tableView));
-
-    ui->tableView->setModel(model);
-
+    // 设置选择行为：点击单元格时选中整行
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    // 启用交替行颜色
     ui->tableView->setAlternatingRowColors(true);
+    // 设置水平表头的列宽调整模式，Stretch表示所有列自动拉伸以填满整个表格宽度
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    // 隐藏不需要的字段（如user_id、balance_id等）
-    ui->tableView->hideColumn(model->fieldIndex("expense_id"));
+    // 隐藏user_id，和expense_id字段
     ui->tableView->hideColumn(model->fieldIndex("user_id"));
+    ui->tableView->hideColumn(model->fieldIndex("expense_id"));
 
-    // 设置列显示顺序
-    // 允许用户拖动列来重新排序
-    ui->tableView->setSortingEnabled(true);
+    ui->tableView->setSortingEnabled(true);// 用户点击表头即可排序
+    // 设置默认排序列为日期列，降序排列（最新的显示在最前面）
+    ui->tableView->sortByColumn(
+        model->fieldIndex("date"),
+        Qt::DescendingOrder
+    );
+    // 将第3列移动到第1位置
+    ui->tableView->horizontalHeader()->moveSection(3, 1);
 
-    // 或者以编程方式移动列
-    ui->tableView->horizontalHeader()->moveSection(3, 1); // 将第3列移动到第1位置
+    // 支持就地编辑：双击或edit键
+    ui->tableView->setEditTriggers(
+        QAbstractItemView::DoubleClicked |
+        QAbstractItemView::EditKeyPressed
+    );
 
-    // 支持就地编辑
-    ui->tableView
-        ->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+    // 设置委托
+    m_highlightDelegate = new HighlightDelegate(ui->tableView);
+    ui->tableView->setItemDelegate(m_highlightDelegate);
 
-    // 改为连接dataChanged信号
-    connect(model, &QSqlTableModel::dataChanged, this, &MainWindow::onDataChanged);
+    connect(model, &QSqlRelationalTableModel::dataChanged,
+            this, &MainWindow::onModelDataChanged);
 }
 
-void MainWindow::onAddButtonClicked() {
-    if (!model) {
+void MainWindow::onAddButtonClicked()
+{
+    if (model == nullptr)
+    {
         QMessageBox::critical(this, tr("错误"), tr("数据模型未初始化！"));
-        return;
+        qFatal("MainWindow在onAddButtonClicked中发现model指向空！");
     }
 
+    isInternalDataChange = true;
+
     // 在最后插入新行
-    int newRow = model->rowCount();
-    if (!model->insertRow(newRow)) {
+    qint32 newRow = model->rowCount();
+    if (!model->insertRow(newRow))
+    {
         QMessageBox::critical(this, tr("错误"), tr("插入新行失败！"));
         return;
     }
@@ -144,76 +163,85 @@ void MainWindow::onAddButtonClicked() {
     QModelIndex dateIndex = model->index(newRow, model->fieldIndex("date"));
     ui->tableView->setCurrentIndex(dateIndex);
     ui->tableView->edit(dateIndex);
+
+    isInternalDataChange = false;
 }
 
-void MainWindow::setDefaultValues(const int newRow) {
+void MainWindow::setDefaultValues(const qint32 newRow)
+{
     if (!model)
         return;
 
-    isProgrammaticChange = true;
+    isInternalDataChange = true;  // 防止递归触发 dataChanged
 
     QSqlRecord record = model->record(newRow);
 
     record.setValue("user_id", currentUser->getId());
     record.setValue("date", QDate::currentDate().toString("yyyy-MM-dd"));
-    record.setValue("category_id", 1); // 默认分类
     record.setValue("amount", 0);
 
     model->setRecord(newRow, record);
-    // QModelIndex idx = model->index(newRow, model->fieldIndex("category_id"));
-    // qDebug() << "DisplayRole:" << model->data(idx, Qt::DisplayRole).toString();
-    // qDebug() << "EditRole:" << model->data(idx, Qt::EditRole).toInt();
 
-    isProgrammaticChange = false;
+    isInternalDataChange = false;
 }
 
-void MainWindow::onDataChanged(const QModelIndex &topLeft,
-                               const QModelIndex &bottomRight,
-                               const QVector<int> &roles) {
-    if (!model || isProgrammaticChange)
+void MainWindow::onModelDataChanged(const QModelIndex &topLeft,
+                        const QModelIndex &bottomRight,
+                        const QList<int> &roles)
+{
+    Q_UNUSED(roles);
+
+    if (isInternalDataChange)
         return;
 
-    // 遍历所有发生变化的单元格
-    for (int row = topLeft.row(); row <= bottomRight.row(); ++row) {
-        for (int col = topLeft.column(); col <= bottomRight.column(); ++col) {
-            QModelIndex index = model->index(row, col);
+    if (topLeft.column() != bottomRight.column() || topLeft.row() != bottomRight.row())
+        qCritical() << "onModelDataChanged()中检测到存在多个数据项的改变";
 
-            // 实时验证单个单元格
-            validateCell(row, col, model->data(index));
-        }
-    }
+    // qDebug() << "unValidateDataIndex inserting : (" << topLeft.row() << ", " << topLeft.column() << ")";
+
+    unValidateDataIndex.insert(topLeft);
 }
 
-bool MainWindow::validateCell(int row, int column, const QVariant &value) {
-    Q_UNUSED(row);
-    QString fieldName = model->headerData(column, Qt::Horizontal).toString();
+// TODO: 完善数据验证逻辑
+bool MainWindow::validateCell(const QModelIndex& index)
+{
+    QString fieldName = model->headerData(index.column(), Qt::Horizontal).toString();
+    QVariant value = model->data(index);
 
-    if (fieldName == tr("日期")) {
-        if (value.isNull()) {
+    if (fieldName == "日期")
+    {
+        if (value.isNull())
+        {
             QMessageBox::warning(this, "输入错误", "日期不能为空！");
             return false;
         }
         QDate date = value.toDate();
-        if (!date.isValid()) {
+        if (!date.isValid())
+        {
             QMessageBox::warning(this, "输入错误", "日期格式无效！");
             return false;
         }
         return true;
 
-    } else if (fieldName == tr("金额")) {
-        if (value.isNull() || value.toInt() <= 0) {
+    }
+    else if (fieldName == "金额")
+    {
+        if (value.isNull())
+        {
             QMessageBox::warning(this, "输入错误", "金额不能为空！");
             return false;
         }
 
         bool ok;
-        double amount = value.toDouble(&ok);
-        if (!ok) {
+        double amount = value.toDouble(&ok);// TODO: 金额格式校验
+        if (!ok)
+        {
             QMessageBox::warning(this, "输入错误", "金额格式无效！");
             return false;
         }
-        if (amount <= 0) {
-            QMessageBox::warning(this, "输入错误", "金额必须大于0！");
+        if (amount <= 0)
+        {
+            QMessageBox::warning(this, "输入错误", "金额需为正数！");
             return false;
         }
 
@@ -223,117 +251,140 @@ bool MainWindow::validateCell(int row, int column, const QVariant &value) {
         long long integer_part = cents / 100;
         long long fractional_part = cents % 100;
 
-        if (fractional_part > 0 && cents != integer_part * 100 + fractional_part) {
+        if (fractional_part > 0 && cents != integer_part * 100 + fractional_part)
+        {
             QMessageBox::warning(this, "输入错误", "金额最多只能有2位小数！");
             return false;
         }
         return true;
 
-    } else if (fieldName == tr("分类")) {
-        if (value.isNull()) {
+    }
+    else if (fieldName == "分类")
+    {
+        if (value.isNull())
+        {
             QMessageBox::warning(this, "输入错误", "请选择支出分类！");
             return false;
         }
         return true;
 
-    } else if (fieldName == tr("描述")) {
+    }
+    else if (fieldName == "描述")
+    {
         if (value.isNull())
             return true; // 描述可为空
 
         QString desc = value.toString();
-        if (desc.length() > 50) {
+        if (desc.length() > 50)
+        {
             QMessageBox::warning(this, "输入错误", "描述长度不能超过50个字符！");
             return false;
         }
         return true;
-    } else {
-        return true;
     }
+    else
+        return true;
 }
 
-void MainWindow::onDeleteButtonClicked() {
+void MainWindow::onDeleteButtonClicked()
+{
     // 获取当前选中的行
     QModelIndexList selectedIndexes = ui->tableView->selectionModel()->selectedRows();
 
     // 如果没有选中任何行，显示提示信息并返回
-    if (selectedIndexes.isEmpty()) {
+    if (selectedIndexes.isEmpty())
+    {
         QMessageBox::warning(this, "删除操作", "请先选择要删除的行！");
         return;
     }
 
+    isInternalDataChange = true;
+
     // 逆序删除避免行号变化导致错误
     std::sort(selectedIndexes.begin(),
               selectedIndexes.end(),
-              [](const QModelIndex &a, const QModelIndex &b) { return a.row() > b.row(); });
+              [](const QModelIndex &a, const QModelIndex &b)
+    {
+        return a.row() > b.row();
+    });
 
-    for (const QModelIndex &index : selectedIndexes) {
+    for (const QModelIndex &index : selectedIndexes)
+    {
         model->removeRow(index.row());
     }
+
+    isInternalDataChange = false;
 
     QMessageBox::information(this, "删除操作", "点击提交，彻底删除。");
 }
 
-void MainWindow::onSubmitButtonClicked() {
+void MainWindow::highlightCell(const QModelIndex &index, bool isError)
+{
+    if (!index.isValid())
+        return;
+
+    isInternalDataChange = true;// 防止递归触发 dataChanged
+
+
+    if (isError)
+        m_highlightDelegate->addCell(QPersistentModelIndex(index));
+    else
+        m_highlightDelegate->removeCell(QPersistentModelIndex(index));
+
+    ui->tableView->update(index);// 只刷新这个单元格
+
+    isInternalDataChange = false;
+}
+
+void MainWindow::onSubmitButtonClicked()
+{
     if (!model)
         return;
 
-    // 验证所有行
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (!validateRow(row)) {
-            QMessageBox::warning(this,
-                                 tr("验证失败"),
-                                 tr("第%1行数据验证失败，请修正后重试").arg(row + 1));
+    // qDebug() << "修改过的单元格数量：" << unValidateDataIndex.size();
+
+    // 提交前对修改过的单元格逐一验证
+    for (auto it = unValidateDataIndex.begin(); it != unValidateDataIndex.end(); )
+    {
+        if (!validateCell(*it))
+        {
+            highlightCell(*it, true);// 验证失败，高亮
             return;
+        }
+        else
+        {
+            highlightCell(*it, false);// 验证通过，取消高亮
+            it = unValidateDataIndex.erase(it);
         }
     }
 
     // 提交到数据库
-    if (model->submitAll()) {
-        QMessageBox::information(this, tr("成功"), tr("数据已保存！"));
-    } else {
-        QMessageBox::critical(this, tr("错误"), tr("提交失败: %1").arg(model->lastError().text()));
-    }
+    if (model->submitAll())
+        QMessageBox::information(this, "成功", "数据已保存！");
+    else
+        QMessageBox::critical(this, "错误", QString("提交失败: %1").arg(model->lastError().text()));
 }
 
-bool MainWindow::validateRow(int row) {
-    // 验证可见的必填字段
-    QVector<int> columnsToValidate;
-
-    // 添加需要验证的列索引
-    columnsToValidate << model->fieldIndex("date") << model->fieldIndex("amount")
-                      << model->fieldIndex("category_id");
-    // 不验证隐藏的 user_id，程序设置
-
-    for (int col : columnsToValidate) {
-        QModelIndex index = model->index(row, col);
-        QVariant value = model->data(index);
-
-        if (!validateCell(row, col, value)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void MainWindow::onSearchButtonClicked() {
+void MainWindow::onSearchButtonClicked()
+{
     SearchDialog searchDialog(model, currentUser, this);
-    if (searchDialog.exec() == QDialog::Accepted) {
+    if (searchDialog.exec() == QDialog::Accepted)
         QMessageBox::information(this, "查询", "查询成功");
-    }
 }
 
-void MainWindow::onChartButtonClicked() {
-    // ChartWindow
-    chartWindow = new ChartWindow(currentUser, this);
+void MainWindow::onChartButtonClicked()
+{
+    chartWindow = new ChartWindow(this, currentUser);
     chartWindow->show();
 }
 
-void MainWindow::setCurrentUser(const User *user) {
+void MainWindow::setCurrentUser(const User *user)
+{
     currentUser = user;
 }
 
-MainWindow::~MainWindow() {
+MainWindow::~MainWindow()
+{
     delete ui;
     delete currentUser;
     delete model;
